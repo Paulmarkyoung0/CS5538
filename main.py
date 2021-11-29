@@ -1,36 +1,38 @@
-import datetime
+import requests
+import random
 from flask import Flask, render_template
 app = Flask(__name__)
 from google.cloud import datastore
 datastore_client = datastore.Client()
 
-def store_time(dt):
+def store_fact(dt):
     entity = datastore.Entity(key=datastore_client.key('visit'))
     entity.update({
-        'timestamp': dt
+        'fact': dt
     })
 
     datastore_client.put(entity)
 
 
-def fetch_times(limit):
+def fetch_facts(limit):
     query = datastore_client.query(kind='visit')
-    query.order = ['-timestamp']
+    query.order = ['-fact']
 
-    times = query.fetch(limit=limit)
+    facts = query.fetch(limit=limit)
 
-    return times
+    return facts
 
 @app.route('/')
 def root():
-    # Store the current access time in Datastore.
-    store_time(datetime.datetime.now(tz=datetime.timezone.utc))
-
-    # Fetch the most recent 10 access times from Datastore.
-    times = fetch_times(10)
+    response = requests.get("http://numbersapi.com/"+str(random.randint(1,100)))
+    # Store the current fact in Datastore.
+    store_fact(response.content.decode('utf-8'))
+    
+    # Fetch the most recent 10 facts from Datastore.
+    facts = fetch_facts(10)
 
     return render_template(
-        'index.html', times=times)
+        'index.html', facts=facts)
 
 if __name__ == '__main__':
     # This is used when running locally only. When deploying to Google App
