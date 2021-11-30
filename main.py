@@ -1,5 +1,6 @@
 import requests
 import random
+import datetime
 from flask import Flask, render_template
 app = Flask(__name__)
 from google.cloud import datastore
@@ -7,8 +8,10 @@ datastore_client = datastore.Client()
 
 def store_fact(dt):
     entity = datastore.Entity(key=datastore_client.key('visit'))
+    time = datetime.datetime.now(tz=datetime.timezone.utc)
     entity.update({
-        'fact': dt
+        'fact': dt,
+        'timestamp': time
     })
 
     datastore_client.put(entity)
@@ -16,7 +19,7 @@ def store_fact(dt):
 
 def fetch_facts(limit):
     query = datastore_client.query(kind='visit')
-    query.order = ['-fact']
+    query.order = ['-timestamp']
 
     facts = query.fetch(limit=limit)
 
